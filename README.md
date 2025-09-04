@@ -31,14 +31,14 @@ We also provide a handy install script.
 ### Basic usage
 
 ```bash
-ask "ffmpeg command to convert mp4 to gif"
+ask ffmpeg command to convert mp4 to gif
 ```
 
 ### Model selection
 
 ```bash
 # Default model (Mercury Coder - optimized for code)
-ask "Write a Python function"
+ask find files larger than 20mb
 
 # Shorthand flags for quick model switching
 ask -c "prompt"  # Mercury Coder (default, best for code)
