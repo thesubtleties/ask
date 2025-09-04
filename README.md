@@ -14,7 +14,11 @@ chmod +x ask
 export OPENROUTER_API_KEY="your-api-key-here"
 
 # Test it
-./ask "What is 2+2?"
+./ask remove lines in file1 that appear in file2
+
+grep -vFf file2 file1 > file3 && mv file3 file1
+
+[inception/mercury-coder via Inception - 0.86s - 20.9 tok/s]
 ```
 
 ## Installation
