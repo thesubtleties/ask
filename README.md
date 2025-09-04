@@ -8,9 +8,12 @@ A lightweight bash script for querying AI models via the OpenRouter API, optimiz
 # Clone and setup
 git clone https://github.com/yourusername/ask.git
 cd ask
-chmod +x ask
 
-# Set your API key
+chmod +x ask
+sudo cp ask /usr/local/bin/
+
+
+# Make sure you have you OpenRouter API key
 export OPENROUTER_API_KEY="your-api-key-here"
 
 # Test it
@@ -18,36 +21,17 @@ export OPENROUTER_API_KEY="your-api-key-here"
 
 grep -vFf file2 file1 > file3 && mv file3 file1
 
-[inception/mercury-coder via Inception - 0.86s - 20.9 tok/s]
+[inception/mercury-coder via Inception - 0.66s - 20.9 tok/s]
 ```
 
-## Installation
-
-### Option 1: Using install.sh 
-```bash
-sudo ./install.sh
-```
-
-### Option 2: Manual installation
-```bash
-chmod +x ask
-sudo cp ask /usr/local/bin/
-```
-
-### Persistent API key setup
-
-Add to your shell profile (`~/.bashrc`, `~/.zshrc`, etc.):
-```bash
-export OPENROUTER_API_KEY="your-api-key-here"
-```
+We also provide a handy install script.
 
 ## Usage
 
 ### Basic usage
 
 ```bash
-ask "What is 2+2?"
-ask "Write a Python hello world"
+ask "ffmpeg command to convert mp4 to gif"
 ```
 
 ### Model selection
