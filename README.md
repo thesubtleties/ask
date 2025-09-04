@@ -17,7 +17,7 @@ sudo cp ask /usr/local/bin/
 export OPENROUTER_API_KEY="your-api-key-here"
 
 # Test it
-ask remove lines in file1 that appear in file2
+> ask remove lines in file1 that appear in file2
 
 grep -vFf file2 file1 > file3 && mv file3 file1
 
