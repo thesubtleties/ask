@@ -156,27 +156,6 @@ docker ps -a | ask "Which containers are using the most memory?"
 - OpenRouter API key (get one at [openrouter.ai](https://openrouter.ai))
 - Set as environment variable: `OPENROUTER_API_KEY`
 
-### Missing dependencies
-```bash
-# Check for required tools
-which curl jq bc
-
-# Install on macOS
-brew install jq bc
-
-# Install on Ubuntu/Debian
-sudo apt-get install jq bc
-```
-
-### No response or errors
-```bash
-# Test with verbose curl output
-curl -v https://openrouter.ai/api/v1/chat/completions \
-  -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"model":"google/gemini-2.5-flash","messages":[{"role":"user","content":"test"}]}'
-```
-
 ## License
 
 MIT
