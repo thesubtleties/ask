@@ -23,7 +23,7 @@ get_model() {
 }
 
 # Default values
-MODEL="inception/mercury-coder"
+MODEL="inception/mercury-coder:nitro"
 SYSTEM_PROMPT=""
 PROMPT=""
 STREAMING=false
@@ -163,13 +163,13 @@ if [ "$STREAMING" = true ]; then
         if [[ "$line" == data:* ]]; then
             json="${line#data: }"
             [ "$json" = "" ] || [ "$json" = "[DONE]" ] && continue
-            
+
             content=$(echo "$json" | jq -r '.choices[0].delta.content // ""' 2>/dev/null)
             [ -n "$content" ] && printf '%s' "$content"
         fi
     done
     echo
-    
+
     # Show metadata
     ELAPSED=$(printf "%.2f" $(echo "$(date +%s.%N) - $START_TIME" | bc))
     echo
@@ -195,7 +195,7 @@ else
     TOKENS=$(echo "$response" | jq -r '.usage.completion_tokens // 0')
     PROVIDER=$(echo "$response" | jq -r '.provider // "Unknown"')
     TPS=$(echo "scale=1; $TOKENS / $ELAPSED" | bc 2>/dev/null || echo "0.0")
-    
+
     echo
     echo "[$MODEL via $PROVIDER - ${ELAPSED}s - ${TPS} tok/s]" >&2
 fi
