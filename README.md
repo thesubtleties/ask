@@ -2,15 +2,6 @@
 
 A lightweight bash script for querying AI models via the OpenRouter API, optimized for direct, executable output.
 
-## Features
-
-- **Direct Output** - Returns executable commands and answers without markdown formatting
-- **Multiple Models** - Quick access to Mercury Coder, Gemini, Claude Sonnet, Kimi, and Qwen models
-- **Streaming Support** - Real-time response streaming for long outputs
-- **Provider Routing** - Automatic fallback between providers for reliability
-- **Performance Metrics** - Shows response time and tokens/second
-- **Pipe Support** - Works seamlessly with Unix pipes and stdin
-
 ## Quick start
 
 ```bash
@@ -28,7 +19,7 @@ export OPENROUTER_API_KEY="your-api-key-here"
 
 ## Installation
 
-### Option 1: Using install.sh (recommended)
+### Option 1: Using install.sh 
 ```bash
 sudo ./install.sh
 ```
@@ -77,10 +68,10 @@ ask -m "openai/gpt-4o" "Explain this concept"
 Specify provider order for fallback support:
 
 ```bash
-ask --provider "openai,together" "Generate code"
+ask --provider "cerebras,together" "Generate code"
 ```
 
-This will try OpenAI first, then fall back to Together if needed.
+This will try Cerebras first, then fall back to Together if needed.
 
 ### System prompts
 
@@ -163,8 +154,6 @@ ask "List all Python files" | ask "Generate a script to check syntax of these fi
 # Use with other tools
 docker ps -a | ask "Which containers are using the most memory?"
 
-# Provider fallback for reliability
-ask --provider "anthropic,openai" "Complex analysis task"
 ```
 
 ## Requirements
@@ -178,31 +167,6 @@ ask --provider "anthropic,openai" "Complex analysis task"
 ### API access
 - OpenRouter API key (get one at [openrouter.ai](https://openrouter.ai))
 - Set as environment variable: `OPENROUTER_API_KEY`
-
-## Performance
-
-The tool displays performance metrics after each query:
-- **Model** - Which AI model processed the request  
-- **Provider** - The infrastructure provider that served it
-- **Response Time** - Total time in seconds
-- **Token Speed** - Generation speed in tokens/second
-
-Example output:
-```
-$ ask "What is 2+2?"
-
-4
-
-[inception/mercury-coder via Inception - 0.82s - 11.0 tok/s]
-```
-
-## Troubleshooting
-
-### API key not set
-```bash
-Error: OPENROUTER_API_KEY environment variable is not set
-# Solution: export OPENROUTER_API_KEY="your-key-here"
-```
 
 ### Missing dependencies
 ```bash
