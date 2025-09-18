@@ -6,7 +6,7 @@ A lightweight bash script for querying AI models via the OpenRouter API, optimiz
 
 ```bash
 # Clone and setup
-git clone https://github.com/yourusername/ask.git
+git clone https://github.com/kagisearch/ask.git
 cd ask
 
 chmod +x ask
