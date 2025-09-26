@@ -1,58 +1,186 @@
 #!/bin/bash
 
-# install.sh - Install ask CLI tool system-wide
+# install.sh - Install ask CLI tool with optional Claude Code integration
 
 set -euo pipefail
 
 # Colors
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
 NC='\033[0m'
 
-echo "Installing 'ask' CLI tool..."
+echo -e "${BLUE}================================${NC}"
+echo -e "${BLUE}    ask CLI Tool Installer${NC}"
+echo -e "${BLUE}================================${NC}"
+echo
 
-# Check if script exists
+# Check if scripts exist
 if [ ! -f "ask" ]; then
-    echo "Error: 'ask' script not found in current directory" >&2
+    echo -e "${RED}Error: 'ask' script not found in current directory${NC}" >&2
     exit 1
 fi
 
-# Make executable
-chmod +x ask
-
-# Install to /usr/local/bin
-echo "Installing to /usr/local/bin/ask (requires sudo)..."
-sudo cp ask /usr/local/bin/
-
-echo -e "${GREEN}✓ Installation complete!${NC}"
+# Ask about Claude Code integration
+echo -e "${GREEN}Installation Options:${NC}"
+echo "1) OpenRouter only (original functionality)"
+echo "2) Claude Code + OpenRouter (full integration)"
+echo
+read -p "Select installation type [1-2]: " -n 1 -r INSTALL_TYPE
+echo
 echo
 
-# Get OpenRouter IPs
-echo "Resolving OpenRouter DNS..."
-IPS=$(dig +short openrouter.ai 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' || nslookup openrouter.ai 2>/dev/null | grep -A1 "Name:" | grep "Address:" | awk '{print $2}' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
+INSTALL_CLAUDE=false
+if [[ "$INSTALL_TYPE" == "2" ]]; then
+    INSTALL_CLAUDE=true
+    echo -e "${BLUE}Installing with Claude Code integration...${NC}"
 
-if [ -n "$IPS" ]; then
-    echo -e "${YELLOW}OpenRouter IP addresses:${NC}"
-    echo "$IPS"
+    # Check for ask_claude.py
+    if [ ! -f "ask_claude.py" ]; then
+        echo -e "${RED}Error: 'ask_claude.py' script not found${NC}" >&2
+        echo "Claude Code integration requires ask_claude.py"
+        exit 1
+    fi
+
+    # Check for Python 3
+    echo "Checking dependencies..."
+    if ! command -v python3 &> /dev/null; then
+        echo -e "${RED}Error: Python 3 is not installed${NC}" >&2
+        echo "Claude Code integration requires Python 3.10+"
+        exit 1
+    fi
+
+    # Check Python version (need 3.10+)
+    PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
+    if [ "$(echo "$PYTHON_VERSION < 3.10" | bc)" -eq 1 ]; then
+        echo -e "${YELLOW}Warning: Python $PYTHON_VERSION detected. Claude Code SDK requires Python 3.10+${NC}"
+    fi
+
+    # No longer need claude-code-sdk since we call CLI directly
+    echo -e "${GREEN}✓ Python 3 found${NC}"
+
+    # Check for Node.js and ask about Claude CLI
+    if command -v npm &> /dev/null; then
+        if ! command -v claude &> /dev/null; then
+            echo
+            read -p "Install Claude Code CLI (npm install -g @anthropic-ai/claude-code)? [Y/n]: " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Nn]$ ]]; then
+                echo "Installing Claude Code CLI (may require sudo)..."
+                sudo npm install -g @anthropic-ai/claude-code || {
+                    echo -e "${YELLOW}Claude Code CLI installation failed or was skipped${NC}"
+                    echo "To install manually: npm install -g @anthropic-ai/claude-code"
+                }
+            fi
+        else
+            echo -e "${GREEN}✓ Claude Code CLI already installed${NC}"
+        fi
+    else
+        echo -e "${YELLOW}Note: npm not found. Claude Code CLI cannot be installed.${NC}"
+        echo "To use Claude Code, install Node.js and run: npm install -g @anthropic-ai/claude-code"
+    fi
+
+    # Ask about default model preference
     echo
-    echo "To improve performance, you can add these to /etc/hosts:"
-    echo "----------------------------------------"
-    for IP in $IPS; do
-        echo "$IP    openrouter.ai"
-    done | head -1  # Only show first IP as hosts file needs single entry
-    echo "----------------------------------------"
+    echo -e "${GREEN}Default Model Configuration:${NC}"
+    echo "Which model should be the default when using 'ask' with no flags?"
+    echo "1) Claude Haiku (fastest, cheapest)"
+    echo "2) Claude Sonnet (balanced - recommended)"
+    echo "3) Claude Opus (most capable, slower)"
+    echo "4) OpenRouter Mercury Coder"
+    read -p "Select default [1-4] (or press Enter for Sonnet): " -n 1 -r DEFAULT_MODEL
     echo
-    echo "Add with: sudo nano /etc/hosts"
-    echo "(Only add ONE IP address to avoid conflicts)"
+
+    case "$DEFAULT_MODEL" in
+        1) DEFAULT_MODEL_NAME="haiku" ;;
+        3) DEFAULT_MODEL_NAME="opus" ;;
+        4) DEFAULT_MODEL_NAME="openrouter" ;;
+        *) DEFAULT_MODEL_NAME="sonnet" ;;  # Default to Sonnet
+    esac
+
+    if [[ "$DEFAULT_MODEL_NAME" != "openrouter" ]]; then
+        echo -e "${BLUE}Setting default model to Claude $DEFAULT_MODEL_NAME${NC}"
+        mkdir -p ~/.ask
+        echo "default_model=$DEFAULT_MODEL_NAME" > ~/.ask/config
+    else
+        echo -e "${BLUE}Default will use OpenRouter${NC}"
+    fi
+
 else
-    echo "Could not resolve OpenRouter IPs. Network may be unavailable."
+    echo -e "${BLUE}Installing OpenRouter-only version...${NC}"
 fi
 
 echo
-echo -e "${GREEN}Usage:${NC}"
-echo "  ask 'What is 2+2?'"
-echo "  ask -g 'Explain quantum computing'"
-echo "  ask --help"
+
+# Make executable
+chmod +x ask
+if [ "$INSTALL_CLAUDE" = true ] && [ -f "ask_claude.py" ]; then
+    chmod +x ask_claude.py
+fi
+
+# Install to /usr/local/bin
+echo "Installing scripts to /usr/local/bin/ (requires sudo)..."
+sudo cp ask /usr/local/bin/
+
+if [ "$INSTALL_CLAUDE" = true ] && [ -f "ask_claude.py" ]; then
+    sudo cp ask_claude.py /usr/local/bin/
+fi
+
 echo
-echo "Don't forget to set your API key:"
-echo "  export OPENROUTER_API_KEY='your-key-here'"
+echo -e "${GREEN}✓ Installation complete!${NC}"
+echo
+
+# Optional: Get OpenRouter IPs (for OpenRouter users)
+if [ "$INSTALL_CLAUDE" = false ] || [ -n "${OPENROUTER_API_KEY:-}" ]; then
+    read -p "Optimize OpenRouter DNS (optional)? [y/N]: " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "Resolving OpenRouter DNS..."
+        IPS=$(dig +short openrouter.ai 2>/dev/null | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$' || nslookup openrouter.ai 2>/dev/null | grep -A1 "Name:" | grep "Address:" | awk '{print $2}' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+$')
+
+        if [ -n "$IPS" ]; then
+            echo -e "${YELLOW}OpenRouter IP addresses:${NC}"
+            echo "$IPS"
+            echo
+            echo "To improve OpenRouter performance, add to /etc/hosts:"
+            echo "----------------------------------------"
+            for IP in $IPS; do
+                echo "$IP    openrouter.ai"
+            done | head -1
+            echo "----------------------------------------"
+            echo
+        fi
+    fi
+fi
+
+# Show usage based on what was installed
+echo -e "${GREEN}Usage:${NC}"
+
+if [ "$INSTALL_CLAUDE" = true ]; then
+    echo "  ask 'What is 2+2?'                    # Claude (default: $DEFAULT_MODEL_NAME)"
+    echo "  ask -h 'Quick calculation'            # Claude Haiku (fast)"
+    echo "  ask -s 'Explain quantum computing'    # Claude Sonnet"
+    echo "  ask -o 'Complex analysis'             # Claude Opus"
+    echo "  ask -m 'Generate some code'           # OpenRouter Mercury"
+    echo "  ask --help                            # Show all options"
+    echo
+    echo -e "${GREEN}Configuration:${NC}"
+    echo "Claude Code:"
+    echo "  - Default model: ~/.ask/config or export ASK_DEFAULT_MODEL=haiku|sonnet|opus"
+    echo "  - Requires Claude Code login: claude login"
+    echo
+    echo "OpenRouter (optional):"
+    echo "  - Set API key: export OPENROUTER_API_KEY='your-key-here'"
+else
+    echo "  ask 'What is 2+2?'                    # Uses OpenRouter"
+    echo "  ask -g 'Explain quantum computing'    # Gemini 2.5 Flash"
+    echo "  ask --help                            # Show all options"
+    echo
+    echo -e "${GREEN}Configuration:${NC}"
+    echo "Set your OpenRouter API key:"
+    echo "  export OPENROUTER_API_KEY='your-key-here'"
+fi
+
+echo
+echo -e "${BLUE}Installation complete! Enjoy using ask!${NC}"

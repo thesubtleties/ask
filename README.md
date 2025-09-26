@@ -1,110 +1,133 @@
-# ask - AI CLI tool
+# ask - AI CLI Tool with Optional Claude Code Integration
 
-A lightweight bash script for querying AI models via the OpenRouter API, optimized for direct, executable output.
+A lightweight command-line tool for querying AI models via OpenRouter API, with optional Claude Code integration for direct access to Claude models.
 
-## Quick start
+## Features
+
+- **Dual Backend Support**: OpenRouter (default) or Claude Code integration
+- **Simple Usage**: Just type `ask` followed by your question
+- **Multiple Models**: Quick shortcuts for various AI models
+- **Direct Answers**: Optimized for command-line usage (no markdown, executable output)
+- **Interactive Installer**: Choose your preferred setup during installation
+- **Configurable**: Set default models and backends to match your workflow
+
+## Quick Start
 
 ```bash
-# Clone and setup
+# Clone the repository
 git clone https://github.com/kagisearch/ask.git
 cd ask
 
-chmod +x ask
-sudo cp ask /usr/local/bin/
+# Run the interactive installer
+./install.sh
 
-
-# Make sure you have you OpenRouter API key
-export OPENROUTER_API_KEY="your-api-key-here"
-
-# Test it
-> ask remove lines in file1 that appear in file2
-
-grep -vFf file2 file1 > file3 && mv file3 file1
-
-[inception/mercury-coder via Inception - 0.66s - 20.9 tok/s]
+# Choose your installation type:
+# 1) OpenRouter only (original functionality)
+# 2) Claude Code + OpenRouter (full integration)
 ```
 
-We also provide a handy install script.
+## Installation Options
+
+### Option 1: OpenRouter Only
+- No additional dependencies required
+- Uses your OpenRouter API key
+- Access to Gemini, GPT-4, Qwen, and more
+
+### Option 2: Claude Code Integration
+- Requires Python 3.10+ and Node.js
+- Installs Claude CLI (`npm install -g @anthropic-ai/claude-code`)
+- Direct access to Claude Haiku, Sonnet, and Opus
+- Falls back to OpenRouter if Claude is unavailable
 
 ## Usage
 
-### Basic usage
+### With Claude Code Integration
 
 ```bash
-ask ffmpeg command to convert mp4 to gif
+# Use default model (configurable, defaults to Sonnet)
+ask "Write hello world in Python"
+
+# Force specific Claude models
+ask -h "Quick calculation: 18% of 2450"  # Haiku (fast)
+ask -s "Explain quantum computing"       # Sonnet (balanced)
+ask -o "Complex reasoning task"          # Opus (powerful)
+
+# Use OpenRouter models
+ask -m "Generate code"                   # Mercury Coder
+ask -g "General question"                # Gemini Flash
 ```
 
-### Model selection
+### With OpenRouter Only
 
 ```bash
-# Default model (Mercury Coder - optimized for code)
-ask find files larger than 20mb
+# Set your API key
+export OPENROUTER_API_KEY="your-key-here"
 
-# Shorthand flags for quick model switching
-ask -c "prompt"  # Mercury Coder (default, best for code)
-ask -g "prompt"  # Gemini 2.5 Flash (fast, general purpose)
-ask -s "prompt"  # Claude Sonnet 4 (complex reasoning)
-ask -k "prompt"  # Kimi K2 (long context)
-ask -q "prompt"  # Qwen 235B (large model)
+# Use default model (Mercury Coder)
+ask "What is 2+2?"
 
-# Custom model by full name
-ask -m "openai/gpt-4o" "Explain this concept"
+# Use specific models
+ask -g "Explain quantum computing"       # Gemini 2.5 Flash
+ask -k "Process this document"          # Kimi K2
+ask -q "Complex analysis"               # Qwen 235B
 ```
 
-### Provider routing
+## Model Selection
 
-Specify provider order for fallback support:
+| Flag | Model | Backend | Best For |
+|------|-------|---------|----------|
+| (none) | Configurable | Claude/OpenRouter | General use |
+| `-h` | Claude Haiku | Claude Code | Fast, simple tasks |
+| `-s` | Claude Sonnet | Claude Code | Balanced (default) |
+| `-o` | Claude Opus | Claude Code | Complex reasoning |
+| `-m` | Mercury Coder | OpenRouter | Code generation |
+| `-g` | Gemini 2.5 Flash | OpenRouter | General purpose |
+| `-k` | Kimi K2 | OpenRouter | Long context |
+| `-q` | Qwen 235B | OpenRouter | Large model tasks |
+
+## Configuration
+
+### Default Claude Model (if Claude is installed)
+
+Set your preferred default model in order of preference:
+
+1. Command-line flag (`-h`, `-s`, `-o`)
+2. Environment variable: `export ASK_DEFAULT_MODEL=haiku|sonnet|opus`
+3. Config file: `~/.ask/config` with `default_model=haiku|sonnet|opus`
+4. Falls back to `sonnet` if not configured
+
+### Requirements
+
+**For OpenRouter:**
+- `curl`, `jq`, `bc` (usually pre-installed)
+- OpenRouter API key
+
+**For Claude Code (optional):**
+- Python 3.10+
+- Node.js and npm
+- Claude CLI: `npm install -g @anthropic-ai/claude-code`
+- Active Claude Code subscription
+
+## Common Options
 
 ```bash
-ask --provider "cerebras,together" "Generate code"
-```
+# Disable system prompt (raw model behavior)
+ask -r "What is 2+2?"
 
-This will try Cerebras first, then fall back to Together if needed.
-
-### System prompts
-
-```bash
 # Custom system prompt
 ask --system "You are a pirate" "Tell me about sailing"
 
-# Disable system prompt for raw model behavior
-ask -r "What is 2+2?"
-```
-
-### Streaming mode
-
-Get responses as they're generated:
-
-```bash
+# Streaming responses (OpenRouter only)
 ask --stream "Tell me a long story"
-```
 
-### Pipe input
-
-```bash
+# Pipe input
 echo "Fix this code: print('hello world)" | ask
 cat script.py | ask "Review this code"
 ```
 
-## Options
+## Examples
 
-| Option | Description |
-|--------|-------------|
-| `-c` | Use Mercury Coder (default) |
-| `-g` | Use Google Gemini 2.5 Flash |
-| `-s` | Use Claude Sonnet 4 |
-| `-k` | Use Moonshotai Kimi K2 |
-| `-q` | Use Qwen3 235B |
-| `-m MODEL` | Use custom model |
-| `-r` | Disable system prompt |
-| `--stream` | Enable streaming output |
-| `--system` | Set custom system prompt |
-| `--provider` | Set provider order (comma-separated) |
-| `-h, --help` | Show help message |
-
-## Common use cases
-
-### Command generation
+### Command Generation
 ```bash
 # Get executable commands directly
 ask "Command to find files larger than 100MB"
@@ -114,16 +137,7 @@ ask "ffmpeg command to convert mp4 to gif"
 # Output: ffmpeg -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos" output.gif
 ```
 
-### Code generation
-```bash
-# Generate code snippets
-ask "Python function to calculate factorial"
-
-# Code review
-cat script.py | ask "Find potential bugs in this code"
-```
-
-### Quick answers
+### Quick Answers
 ```bash
 # Calculations
 ask "What is 18% of 2450?"
@@ -134,27 +148,29 @@ ask "What port does PostgreSQL use?"
 # Output: 5432
 ```
 
-### Advanced usage
+### Code Tasks
 ```bash
-# Chain commands
-ask "List all Python files" | ask "Generate a script to check syntax of these files"
+# Code review with Sonnet
+cat script.py | ask -s "Find potential bugs"
 
-# Use with other tools
-docker ps -a | ask "Which containers are using the most memory?"
+# Quick fix with Haiku
+echo "def func(x): return x/0" | ask -h "Fix this function"
 
+# Complex refactoring with Opus
+cat large_module.py | ask -o "Refactor for better performance"
 ```
 
-## Requirements
+## Why Use ask?
 
-### Dependencies
-- `bash` - Shell interpreter
-- `curl` - HTTP requests to OpenRouter API
-- `jq` - JSON parsing for API responses
-- `bc` - Performance metrics calculation
+- **Fast**: Direct CLI calls with `-p` flag for non-interactive mode (~3-4s responses)
+- **Flexible**: Switch between Claude and OpenRouter models with simple flags
+- **Clean Output**: No markdown or formatting - just executable answers
+- **Scriptable**: Perfect for automation and shell scripts
+- **Cost-Effective**: Use cheaper models for simple tasks, powerful ones when needed
 
-### API access
-- OpenRouter API key (get one at [openrouter.ai](https://openrouter.ai))
-- Set as environment variable: `OPENROUTER_API_KEY`
+## Contributing
+
+Pull requests are welcome! The installer is designed to be backwards-compatible, so OpenRouter-only users aren't affected by Claude Code integration.
 
 ## License
 
