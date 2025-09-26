@@ -47,17 +47,16 @@ if [[ "$INSTALL_TYPE" == "2" ]]; then
     echo "Checking dependencies..."
     if ! command -v python3 &> /dev/null; then
         echo -e "${RED}Error: Python 3 is not installed${NC}" >&2
-        echo "Claude Code integration requires Python 3.10+"
+        echo "Claude Code integration requires Python 3+"
         exit 1
     fi
 
-    # Check Python version (need 3.10+)
+    # Check Python version (recommend 3.6+ for subprocess features)
     PYTHON_VERSION=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")')
-    if [ "$(echo "$PYTHON_VERSION < 3.10" | bc)" -eq 1 ]; then
-        echo -e "${YELLOW}Warning: Python $PYTHON_VERSION detected. Claude Code SDK requires Python 3.10+${NC}"
+    if [ "$(echo "$PYTHON_VERSION < 3.6" | bc)" -eq 1 ]; then
+        echo -e "${YELLOW}Warning: Python $PYTHON_VERSION detected. Python 3.6+ recommended${NC}"
     fi
 
-    # No longer need claude-code-sdk since we call CLI directly
     echo -e "${GREEN}✓ Python 3 found${NC}"
 
     # Check for Node.js and ask about Claude CLI
