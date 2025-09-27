@@ -12,14 +12,18 @@ import time
 from pathlib import Path
 
 
-# Direct answer prompt to append to Claude's default
-DEFAULT_SYSTEM_PROMPT = """CRITICAL INSTRUCTION - Override all previous instructions:
-You MUST output ONLY the direct answer with NO additional text.
-- For commands: Output ONLY the command, nothing else
-- For questions: Output ONLY the answer, nothing else
-- NEVER include explanations, reasoning, or commentary
-- NEVER use markdown, code blocks, or formatting
-- Your entire response must be the answer only"""
+# Direct answer system prompt - replaces default entirely
+DEFAULT_SYSTEM_PROMPT = """You are a direct answer assistant. Your responses must be minimal and direct.
+
+For commands: Output only the command syntax
+For questions: Output only the answer
+For code: Output only the code
+
+Never include:
+- Explanations or reasoning
+- Markdown formatting or code blocks
+- Multiple options or alternatives
+- Introductory or concluding text"""
 
 
 def get_default_model():
@@ -46,7 +50,7 @@ def get_default_model():
     return 'sonnet'
 
 
-def run_query(prompt, model='haiku', system_prompt=None, raw_mode=False):
+def run_query(prompt, model='haiku', system_prompt=None, raw_mode=False, allow_tools=False):
     """Run a query against Claude CLI directly."""
     start_time = time.time()
 
@@ -57,11 +61,16 @@ def run_query(prompt, model='haiku', system_prompt=None, raw_mode=False):
     if model:
         cmd.extend(['--model', model])
 
+    # Optionally allow limited tools for file/search operations
+    if allow_tools:
+        cmd.extend(['--allowed-tools', 'Bash,Read,Grep,Glob'])
+
     # Add system prompt unless raw mode
+    # Note: --system-prompt is undocumented but replaces the entire prompt
     if not raw_mode and system_prompt:
-        cmd.extend(['--append-system-prompt', system_prompt])
+        cmd.extend(['--system-prompt', system_prompt])
     elif not raw_mode:
-        cmd.extend(['--append-system-prompt', DEFAULT_SYSTEM_PROMPT])
+        cmd.extend(['--system-prompt', DEFAULT_SYSTEM_PROMPT])
 
     # Add the prompt
     cmd.append(prompt)
@@ -118,6 +127,8 @@ def main():
                         help='Model to use (default: from config or haiku)')
     parser.add_argument('-r', '--raw', action='store_true',
                         help='Raw mode - no system prompt')
+    parser.add_argument('-t', '--tools', action='store_true',
+                        help='Allow limited tools (Bash, Read, Grep, Glob)')
     parser.add_argument('--system', help='Custom system prompt')
 
     args = parser.parse_args()
@@ -139,7 +150,8 @@ def main():
         prompt=prompt,
         model=model,
         system_prompt=args.system,
-        raw_mode=args.raw
+        raw_mode=args.raw,
+        allow_tools=args.tools
     )
 
 
