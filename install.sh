@@ -140,9 +140,24 @@ if [[ "$INSTALL_TYPE" == "2" ]]; then
     fi
 
     echo
-    echo -e "${BLUE}Safety configuration complete.${NC}"
-    echo "To modify safety settings, edit: ~/.ask/config"
-    echo "To remove safety prompt, edit: ask_claude.py (lines 40-46)"
+    echo -e "${YELLOW}Web Search Option:${NC}"
+    echo "Enable web search to allow Claude to fetch current information from the internet."
+    echo "This includes news, documentation, and real-time data."
+    read -p "Enable web search capabilities? [y/N]: " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        echo "enable_web=true" >> ~/.ask/config
+        echo -e "${GREEN}✓ Web search enabled${NC}"
+        echo "Claude can now search the web and fetch current information."
+    else
+        echo "enable_web=false" >> ~/.ask/config
+        echo "Web search disabled (Claude will only use local tools)."
+    fi
+
+    echo
+    echo -e "${BLUE}Configuration complete.${NC}"
+    echo "To modify settings, edit: ~/.ask/config"
+    echo "To remove safety prompt, edit: ask_claude.py (lines 43-51)"
 
 else
     echo -e "${BLUE}Installing OpenRouter-only version...${NC}"

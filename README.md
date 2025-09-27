@@ -8,8 +8,10 @@ A lightweight command-line tool for querying AI models via OpenRouter API, with 
 - **Simple Usage**: Just type `ask` followed by your question
 - **Multiple Models**: Quick shortcuts for various AI models
 - **Direct Answers**: Optimized for command-line usage (no markdown, executable output)
+- **Web Search**: Optional web access for current information (Claude Code only)
+- **Safety Features**: Multiple layers of protection against destructive commands
 - **Interactive Installer**: Choose your preferred setup during installation
-- **Configurable**: Set default models and backends to match your workflow
+- **Configurable**: Set default models, safety limits, and features via config
 
 ## Quick Start
 
@@ -103,13 +105,33 @@ The Claude Code integration includes multiple safety layers:
 1. **System Prompt Safety Rules**: Claude is instructed to never execute destructive commands
 2. **Warning Prefixes**: Destructive commands are prefixed with `⚠️ DESTRUCTIVE:`
 3. **Optional Turn Limiting**: Set `max_turns=1` in `~/.ask/config` to limit tool execution
-4. **Explicit Consent**: Installer requires typing "yes" to acknowledge risks
+4. **Web Search Control**: Web access disabled by default, enable with `enable_web=true`
+5. **Explicit Consent**: Installer requires typing "yes" to acknowledge risks
 
 ⚠️ **Important**: LLMs can be unpredictable. While safety measures are in place, always review commands before execution.
 
-To modify safety settings:
-- Edit `~/.ask/config` for turn limits
-- Edit `ask_claude.py` lines 40-46 to modify safety rules
+### Web Search (Claude Code)
+
+When enabled, Claude can search the web and fetch current information:
+
+```bash
+# Enable in config
+echo "enable_web=true" >> ~/.ask/config
+
+# Use it
+ask "what is the top story on hacker news"
+ask "current weather in San Francisco"
+ask "latest Python version"
+```
+
+Web search is disabled by default for privacy and safety. Enable during installation or by editing `~/.ask/config`.
+
+### Configuration
+
+To modify settings, edit `~/.ask/config`:
+- `default_model=haiku|sonnet|opus` - Set default Claude model
+- `max_turns=1` - Limit tool execution (may prevent some features)
+- `enable_web=true|false` - Enable/disable web search capabilities
 
 ### Requirements
 

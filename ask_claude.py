@@ -31,9 +31,12 @@ AVAILABLE TOOLS (automatically available):
 - Read: Read file contents to answer questions about code
 - Grep: Search for patterns across files
 - Glob: Find files by pattern
+- WebSearch: Search the web for current information
+- WebFetch: Fetch and analyze web page content
 
 TOOL USAGE:
 - Use tools when asked "how many", "find", "search", "check", "list"
+- Use web tools for current events, news, documentation lookups
 - Verify facts instead of guessing
 - Count/measure rather than estimate
 
@@ -94,6 +97,21 @@ def get_max_turns():
     return None  # No limit by default
 
 
+def is_web_enabled():
+    """Check if web search is enabled in config."""
+    config_file = Path.home() / '.ask' / 'config'
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                for line in f:
+                    if line.strip().startswith('enable_web='):
+                        value = line.split('=', 1)[1].strip().lower()
+                        return value == 'true'
+        except:
+            pass
+    return False  # Disabled by default for safety
+
+
 def run_query(prompt, model='haiku', system_prompt=None, max_turns=None):
     """Run a query against Claude CLI directly."""
     start_time = time.time()
@@ -108,6 +126,11 @@ def run_query(prompt, model='haiku', system_prompt=None, max_turns=None):
     # Add turn limit if specified (safety feature)
     if max_turns is not None:
         cmd.extend(['--max-turns', str(max_turns)])
+
+    # Check if web search is enabled
+    if is_web_enabled():
+        # Allow web tools by listing all tools we want
+        cmd.extend(['--allowed-tools', 'Bash,Read,Grep,Glob,WebSearch,WebFetch'])
 
     # Note: Tools are available by default in -p mode
 
