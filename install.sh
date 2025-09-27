@@ -106,6 +106,44 @@ if [[ "$INSTALL_TYPE" == "2" ]]; then
         echo -e "${BLUE}Default will use OpenRouter${NC}"
     fi
 
+    # Safety warnings for Claude Code integration
+    echo
+    echo -e "${RED}⚠️  IMPORTANT SAFETY INFORMATION ⚠️${NC}"
+    echo -e "${YELLOW}Claude has access to execute commands on your system.${NC}"
+    echo "The system prompt includes safety rules to prevent destructive actions,"
+    echo "but LLMs can be unpredictable. The safety measures include:"
+    echo
+    echo "1. System prompt instructs Claude to NOT execute destructive commands"
+    echo "2. Destructive commands will be prefixed with '⚠️ DESTRUCTIVE:'"
+    echo "3. Optional: Limit to 1 turn to reduce tool execution risk"
+    echo
+    echo -e "${RED}Do you understand these risks and accept responsibility?${NC}"
+    read -p "Type 'yes' to continue: " -r ACCEPT_RISK
+    if [[ "$ACCEPT_RISK" != "yes" ]]; then
+        echo -e "${RED}Installation cancelled for safety.${NC}"
+        exit 1
+    fi
+
+    echo
+    echo -e "${YELLOW}Additional Safety Option:${NC}"
+    echo "Limiting Claude to 1 turn MAY prevent tool execution (not guaranteed)."
+    echo "This makes responses faster but prevents counting files, etc."
+    read -p "Enable 1-turn limit for extra safety? [y/N]: " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Yy]$ ]]; then
+        mkdir -p ~/.ask
+        echo "max_turns=1" >> ~/.ask/config
+        echo -e "${GREEN}✓ 1-turn limit enabled${NC}"
+        echo "Note: This may cause errors for queries requiring file access."
+    else
+        echo "No turn limit set (Claude can use tools to answer questions)."
+    fi
+
+    echo
+    echo -e "${BLUE}Safety configuration complete.${NC}"
+    echo "To modify safety settings, edit: ~/.ask/config"
+    echo "To remove safety prompt, edit: ask_claude.py (lines 40-46)"
+
 else
     echo -e "${BLUE}Installing OpenRouter-only version...${NC}"
 fi

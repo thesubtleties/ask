@@ -96,6 +96,21 @@ Set your preferred default model in order of preference:
 3. Config file: `~/.ask/config` with `default_model=haiku|sonnet|opus`
 4. Falls back to `sonnet` if not configured
 
+### Safety Features (Claude Code)
+
+The Claude Code integration includes multiple safety layers:
+
+1. **System Prompt Safety Rules**: Claude is instructed to never execute destructive commands
+2. **Warning Prefixes**: Destructive commands are prefixed with `⚠️ DESTRUCTIVE:`
+3. **Optional Turn Limiting**: Set `max_turns=1` in `~/.ask/config` to limit tool execution
+4. **Explicit Consent**: Installer requires typing "yes" to acknowledge risks
+
+⚠️ **Important**: LLMs can be unpredictable. While safety measures are in place, always review commands before execution.
+
+To modify safety settings:
+- Edit `~/.ask/config` for turn limits
+- Edit `ask_claude.py` lines 40-46 to modify safety rules
+
 ### Requirements
 
 **For OpenRouter:**
@@ -103,7 +118,7 @@ Set your preferred default model in order of preference:
 - OpenRouter API key
 
 **For Claude Code (optional):**
-- Python 3.10+
+- Python 3.6+
 - Node.js and npm
 - Claude CLI: `npm install -g @anthropic-ai/claude-code`
 - Active Claude Code subscription
@@ -111,11 +126,11 @@ Set your preferred default model in order of preference:
 ## Common Options
 
 ```bash
-# Disable system prompt (raw model behavior)
-ask -r "What is 2+2?"
-
 # Custom system prompt
 ask --system "You are a pirate" "Tell me about sailing"
+
+# Disable system prompt (OpenRouter only)
+ask -r -m "What is 2+2?"
 
 # Streaming responses (OpenRouter only)
 ask --stream "Tell me a long story"
@@ -135,6 +150,10 @@ ask "Command to find files larger than 100MB"
 
 ask "ffmpeg command to convert mp4 to gif"
 # Output: ffmpeg -i input.mp4 -vf "fps=10,scale=320:-1:flags=lanczos" output.gif
+
+# Safety: Destructive commands get warnings
+ask "command to delete all files in /tmp/test"
+# Output: ⚠️ DESTRUCTIVE: rm -rf /tmp/test/*
 ```
 
 ### Quick Answers

@@ -37,6 +37,14 @@ TOOL USAGE:
 - Verify facts instead of guessing
 - Count/measure rather than estimate
 
+SAFETY RULES - CRITICAL:
+- NEVER execute destructive commands (rm -rf, dd, mkfs, format, etc.)
+- NEVER modify system files (/etc, /sys, /boot, etc.)
+- NEVER execute commands with sudo/su
+- If asked for destructive commands, OUTPUT the command but DO NOT execute
+- For destructive commands, prefix response with: "⚠️ DESTRUCTIVE: "
+- User must manually review and execute dangerous commands themselves
+
 NEVER OUTPUT:
 - Markdown code blocks (```)
 - Explanations or reasoning
@@ -71,7 +79,22 @@ def get_default_model():
     return 'sonnet'
 
 
-def run_query(prompt, model='haiku', system_prompt=None):
+def get_max_turns():
+    """Get max_turns setting from config (safety feature)."""
+    config_file = Path.home() / '.ask' / 'config'
+    if config_file.exists():
+        try:
+            with open(config_file) as f:
+                for line in f:
+                    if line.strip().startswith('max_turns='):
+                        turns = line.split('=', 1)[1].strip()
+                        return int(turns)
+        except:
+            pass
+    return None  # No limit by default
+
+
+def run_query(prompt, model='haiku', system_prompt=None, max_turns=None):
     """Run a query against Claude CLI directly."""
     start_time = time.time()
 
@@ -81,6 +104,10 @@ def run_query(prompt, model='haiku', system_prompt=None):
     # Add model
     if model:
         cmd.extend(['--model', model])
+
+    # Add turn limit if specified (safety feature)
+    if max_turns is not None:
+        cmd.extend(['--max-turns', str(max_turns)])
 
     # Note: Tools are available by default in -p mode
 
@@ -159,11 +186,15 @@ def main():
     # Determine model
     model = args.model or get_default_model()
 
+    # Get max_turns from config (safety feature)
+    max_turns = get_max_turns()
+
     # Run the query
     run_query(
         prompt=prompt,
         model=model,
-        system_prompt=args.system
+        system_prompt=args.system,
+        max_turns=max_turns
     )
 
 
