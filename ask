@@ -56,10 +56,10 @@ OpenRouter Options:
   -k          Use OpenRouter Kimi K2
   -q          Use OpenRouter Qwen 235B
   --model MODEL  Use custom OpenRouter model
+  -r          Disable system prompt (OpenRouter only)
 
 General Options:
-  -r          Disable system prompt (raw model behavior)
-  --stream    Enable streaming output
+  --stream    Enable streaming output (OpenRouter only)
   --system    Set custom system prompt
   --provider  OpenRouter: comma-separated list of providers
   --help      Show this help message
@@ -182,18 +182,12 @@ if [ "$USE_CLAUDE" = true ]; then
         CLAUDE_CMD+=("-m" "$CLAUDE_MODEL")
     fi
 
-    # Add other options
-    if [ "$NO_SYSTEM" = true ]; then
-        CLAUDE_CMD+=("-r")
-    fi
-
-    if [ "$STREAMING" = true ]; then
-        CLAUDE_CMD+=("--stream")
-    fi
-
+    # Add custom system prompt if provided
     if [ -n "$SYSTEM_PROMPT" ]; then
         CLAUDE_CMD+=("--system" "$SYSTEM_PROMPT")
     fi
+
+    # Note: -r and --stream are not supported by Claude mode
 
     # Execute with prompt
     echo "$PROMPT" | "${CLAUDE_CMD[@]}"
