@@ -13,17 +13,38 @@ from pathlib import Path
 
 
 # Direct answer system prompt - replaces default entirely
-DEFAULT_SYSTEM_PROMPT = """You are a direct answer assistant. Your responses must be minimal and direct.
+DEFAULT_SYSTEM_PROMPT = """You are a command-line assistant responding directly in the terminal.
 
-For commands: Output only the command syntax
-For questions: Output only the answer
-For code: Output only the code
+Your output will be displayed raw in the terminal or potentially piped to other commands.
 
-Never include:
+RESPONSE RULES:
+- Output ONLY the direct answer
+- Commands: bare executable syntax (no $ prefix, no markdown)
+- Questions: minimal factual answer
+- Numbers: just the value
+- Paths/names: just the text
+- Everything must be copy-pasteable (no quotes around answers)
+- User will directly paste your output into terminal or other commands
+
+AVAILABLE TOOLS (automatically available):
+- Bash: Execute commands to get real answers (counts, searches, checks)
+- Read: Read file contents to answer questions about code
+- Grep: Search for patterns across files
+- Glob: Find files by pattern
+
+TOOL USAGE:
+- Use tools when asked "how many", "find", "search", "check", "list"
+- Verify facts instead of guessing
+- Count/measure rather than estimate
+
+NEVER OUTPUT:
+- Markdown code blocks (```)
 - Explanations or reasoning
-- Markdown formatting or code blocks
-- Multiple options or alternatives
-- Introductory or concluding text"""
+- Multiple alternatives
+- Headers or formatting
+- "Here is" or "The answer is" phrases
+
+Remember: User can pipe your output directly to bash or other commands."""
 
 
 def get_default_model():
@@ -50,7 +71,7 @@ def get_default_model():
     return 'sonnet'
 
 
-def run_query(prompt, model='haiku', system_prompt=None, raw_mode=False, allow_tools=False):
+def run_query(prompt, model='haiku', system_prompt=None):
     """Run a query against Claude CLI directly."""
     start_time = time.time()
 
@@ -61,15 +82,12 @@ def run_query(prompt, model='haiku', system_prompt=None, raw_mode=False, allow_t
     if model:
         cmd.extend(['--model', model])
 
-    # Optionally allow limited tools for file/search operations
-    if allow_tools:
-        cmd.extend(['--allowed-tools', 'Bash,Read,Grep,Glob'])
+    # Note: Tools are available by default in -p mode
 
-    # Add system prompt unless raw mode
-    # Note: --system-prompt is undocumented but replaces the entire prompt
-    if not raw_mode and system_prompt:
+    # Add system prompt (--system-prompt replaces the entire prompt)
+    if system_prompt:
         cmd.extend(['--system-prompt', system_prompt])
-    elif not raw_mode:
+    else:
         cmd.extend(['--system-prompt', DEFAULT_SYSTEM_PROMPT])
 
     # Add the prompt
@@ -124,11 +142,7 @@ def main():
     parser = argparse.ArgumentParser(description='Query Claude via CLI')
     parser.add_argument('prompt', nargs='?', help='The prompt to send')
     parser.add_argument('-m', '--model', choices=['haiku', 'sonnet', 'opus'],
-                        help='Model to use (default: from config or haiku)')
-    parser.add_argument('-r', '--raw', action='store_true',
-                        help='Raw mode - no system prompt')
-    parser.add_argument('-t', '--tools', action='store_true',
-                        help='Allow limited tools (Bash, Read, Grep, Glob)')
+                        help='Model to use (default: from config or sonnet)')
     parser.add_argument('--system', help='Custom system prompt')
 
     args = parser.parse_args()
@@ -149,9 +163,7 @@ def main():
     run_query(
         prompt=prompt,
         model=model,
-        system_prompt=args.system,
-        raw_mode=args.raw,
-        allow_tools=args.tools
+        system_prompt=args.system
     )
 
 
