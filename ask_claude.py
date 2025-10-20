@@ -114,7 +114,11 @@ def is_web_enabled():
 
 def run_query(prompt, model='haiku', system_prompt=None, max_turns=None):
     """Run a query against Claude CLI directly."""
+    import json
     start_time = time.time()
+
+    # Detect if we should stream (output is going to a terminal)
+    use_streaming = sys.stdout.isatty()
 
     # Build command - using -p for print mode (non-interactive)
     cmd = ['claude', '-p']
@@ -132,6 +136,10 @@ def run_query(prompt, model='haiku', system_prompt=None, max_turns=None):
         # Allow web tools by listing all tools we want
         cmd.extend(['--allowed-tools', 'Bash,Read,Grep,Glob,WebSearch,WebFetch'])
 
+    # Add streaming options if outputting to terminal
+    if use_streaming:
+        cmd.extend(['--output-format', 'stream-json', '--include-partial-messages', '--verbose'])
+
     # Note: Tools are available by default in -p mode
 
     # Add system prompt (--system-prompt replaces the entire prompt)
@@ -144,38 +152,70 @@ def run_query(prompt, model='haiku', system_prompt=None, max_turns=None):
     cmd.append(prompt)
 
     try:
-        # Run the command
-        result = subprocess.run(
-            cmd,
-            capture_output=True,
-            text=True,
-            timeout=30  # 30 second timeout
-        )
+        if use_streaming:
+            # Streaming mode - show response in real-time
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1  # Line buffered
+            )
 
-        if result.returncode != 0:
-            print(f"Error: Claude CLI failed: {result.stderr}", file=sys.stderr)
-            sys.exit(1)
+            total_cost = 0
+            response_lines = []
 
-        # Output the response
-        response = result.stdout.strip()
-        print(response)
+            # Process each JSON line as it arrives
+            for line in process.stdout:
+                try:
+                    data = json.loads(line)
 
-        # Show metadata to stderr
-        elapsed = time.time() - start_time
+                    # Extract text from content_block_delta events
+                    if data.get('type') == 'stream_event':
+                        event = data.get('event', {})
+                        if event.get('type') == 'content_block_delta':
+                            delta = event.get('delta', {})
+                            if delta.get('type') == 'text_delta':
+                                text = delta.get('text', '')
+                                print(text, end='', flush=True)
+                                response_lines.append(text)
 
-        # Try to extract cost from stderr if available
-        cost_str = ""
-        if "Cost:" in result.stderr:
-            # Try to parse cost from stderr
-            for line in result.stderr.split('\n'):
-                if 'Cost:' in line or '$' in line:
-                    import re
-                    match = re.search(r'\$([0-9.]+)', line)
-                    if match:
-                        cost_str = f" - ${match.group(1)}"
-                        break
+                    # Get cost from final result
+                    elif data.get('type') == 'result':
+                        total_cost = data.get('total_cost_usd', 0)
 
-        print(f"\n[Claude {model.capitalize()} - {elapsed:.2f}s{cost_str}]", file=sys.stderr)
+                except json.JSONDecodeError:
+                    continue
+
+            process.wait()
+            if response_lines:
+                print()  # Final newline
+
+            # Show metadata
+            elapsed = time.time() - start_time
+            cost_str = f" - ${total_cost:.4f}" if total_cost else ""
+            print(f"\n[Claude {model.capitalize()} - {elapsed:.2f}s{cost_str}]", file=sys.stderr)
+
+        else:
+            # Non-streaming mode (for piping/capturing)
+            result = subprocess.run(
+                cmd,
+                capture_output=True,
+                text=True,
+                timeout=30
+            )
+
+            if result.returncode != 0:
+                print(f"Error: Claude CLI failed: {result.stderr}", file=sys.stderr)
+                sys.exit(1)
+
+            # Output the response
+            response = result.stdout.strip()
+            print(response)
+
+            # Show metadata to stderr
+            elapsed = time.time() - start_time
+            print(f"\n[Claude {model.capitalize()} - {elapsed:.2f}s]", file=sys.stderr)
 
     except subprocess.TimeoutExpired:
         print("Error: Claude CLI timed out after 30 seconds", file=sys.stderr)
